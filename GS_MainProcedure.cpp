@@ -31,7 +31,7 @@ void *cornerSource (int BC1, int BC2, double coeff, double *source)
     {
         if (BC2>0)
         {
-            source[0] = 4*coeff*(BC1 + BC2);
+            source[0] = 2*coeff*(BC1 + BC2);
             source[1] = -4*coeff;
         }
         else
@@ -50,8 +50,6 @@ void *cornerSource (int BC1, int BC2, double coeff, double *source)
         source[0] = 0;
         source[1] = 0;
     }
-
-
 }
 
 // I think we're going to return the number of iterations it took rather than the result which I guess would be read out.
@@ -90,10 +88,9 @@ int gaussSeidel_RB (double A, BoundaryTemperature BC, double guess, int rw, int 
                         {
                             cornerSource(BC.South,BC.West,coeff, source);
                             coeff_p = 2*coeff-source[1];
-                            // cout << "Well that happened!" << " And coeff_p is: " << coeff_p << endl;
                             t_matrix_final[i][j] = (coeff*(t_matrix_final[i+1][j]+t_matrix_final[i][j+1])+source[0])/coeff_p;
                         }
-                        else if (j==cl)
+                        else if (j == (cl-1))
                         {
                             cornerSource(BC.South,BC.East,coeff, source);
                             coeff_p = 2*coeff-source[1];
@@ -118,7 +115,7 @@ int gaussSeidel_RB (double A, BoundaryTemperature BC, double guess, int rw, int 
                     }
                     else if (j == 0)
                     {
-                        if (i == rw)
+                        if (i == (rw-1))
                         {
                             cornerSource(BC.North,BC.West,coeff, source);
                             coeff_p = 2*coeff-source[1];
@@ -141,11 +138,11 @@ int gaussSeidel_RB (double A, BoundaryTemperature BC, double guess, int rw, int 
                             }
                         }
                     }
-                    else if (i == rw)
+                    else if (i == (rw-1))
                     {
-                        if (j == cl)
+                        if (j == (cl-1))
                         {
-                            cornerSource(BC.North,BC.East,coeff, source);
+                            cornerSource(BC.North, BC.East, coeff, source);
                             coeff_p = 2*coeff-source[1];
                             t_matrix_final[i][j] = (coeff*(t_matrix_final[i-1][j]+t_matrix_final[i][j-1])+source[0])/coeff_p;
 
@@ -167,7 +164,7 @@ int gaussSeidel_RB (double A, BoundaryTemperature BC, double guess, int rw, int 
                             }
                         }
                     }
-                    else if (j == cl)
+                    else if (j == (cl-1))
                     {
                         if (BC.East>0)
                         {
@@ -179,7 +176,7 @@ int gaussSeidel_RB (double A, BoundaryTemperature BC, double guess, int rw, int 
                         else
                         {
                             coeff_p = 3*coeff;
-                            t_matrix_final[i][j] = coeff*(t_matrix_final[i+1][j]+t_matrix_final[i][j-1]+t_matrix_final[i-1][j])/coeff_p;
+                            t_matrix_final[i][j] = coeff*(t_matrix_final[i-1][j]+t_matrix_final[i+1][j]+t_matrix_final[i][j-1])/coeff_p;
 
                         }
                     }
@@ -208,8 +205,23 @@ int gaussSeidel_RB (double A, BoundaryTemperature BC, double guess, int rw, int 
 
         if ((diff_matrix / (rw*cl)) < TOLERANCE)
         {
-            // Write out matrix to text to read into a sensible language for plotting.
             printf("The solution converges after %.d iterations.\n",iter);
+
+            // Write out matrix to text to read into a sensible language for plotting.
+            // Write out the slab dimensions and the Temperatures in 1-D, it'll make it easy to reshape the matrix.
+            ofstream filewrite;
+            filewrite.open("C:\\Users\\Philadelphia\\Documents\\1_SweptTimeResearch\\GaussSeidel\\GaussSeidelCPP\\GS_output.txt", ios::trunc);
+            filewrite << LENX << "\n" << LENY << "\n" << DS;
+
+            for (int k = 0; k < rw; k++)
+            {
+                for (int n = 0; n < cl; n++)
+                {
+                    filewrite << "\n" << t_matrix_final[k][n];
+                }
+            }
+
+            filewrite.close();
             free(source);
             return 1;
         }
@@ -232,6 +244,7 @@ int main()
     double A = DZ * DS;
     double guess;
     BoundaryTemperature bound_cond;
+
     // Get initial conditions
     cout << "Provide Boundary conditions for each edge of the slab.\nEnter Constant Temperature in KELVIN\nor a negative number for an insulated boundary:\nNorth: \n";
     cin >> bound_cond.North;
@@ -242,7 +255,7 @@ int main()
     cout << "West: \n";
     cin >> bound_cond.West;
 
-    // Could just make a guess from the average positive temperature.
+    // Get Guess for slab temperature
     cout << "Provide a guess Temperature for the slab in Kelvin:\n";
     cin >> guess;
 
@@ -250,8 +263,8 @@ int main()
     gaussSeidel_RB(A, bound_cond, guess, rw, cl);
     double wall1 = clock();
     double timed = (wall1-wall0)/CLOCKS_PER_SEC;
-    cout << "That took " << timed << " seconds." << endl;
 
+    cout << "That took " << timed << " seconds." << endl;
 
     return 0;
 }
