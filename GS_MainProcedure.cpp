@@ -11,22 +11,22 @@ using namespace std;
 #define LENY      2.
 #define TH_COND   16.
 #define DZ        .01
-#define DS        .1
+#define DS        .05
 #define TOLERANCE 1e-5
+
 
 struct BoundaryTemperature
 {
-    int West;
-    int East;
     int North;
+    int East;
     int South;
+    int West;
 
 };
 
 // Instead of writing this over and over again.  Is this a leak?
 void *cornerSource (int BC1, int BC2, double coeff, double *source)
 {
-
     if (BC1>0)
     {
         if (BC2>0)
