@@ -4,6 +4,7 @@
 #include <time.h>
 #include <fstream>
 #include <stdlib.h>
+#include <cstring>
 
 using namespace std;
 
@@ -13,7 +14,6 @@ using namespace std;
 #define DZ        .01
 #define DS        .05
 #define TOLERANCE 1e-5
-
 
 struct BoundaryTemperature
 {
@@ -227,13 +227,8 @@ int gaussSeidel_RB (double A, BoundaryTemperature BC, double guess, int rw, int 
         }
 
         // Make the initial the final.
-        for (int k = 0; k < rw; k++)
-        {
-            for (int n = 0; n < cl; n++)
-            {
-                t_matrix_initial[k][n] = t_matrix_final[k][n];
-            }
-        }
+
+        memcpy(&t_matrix_initial,&t_matrix_final,sizeof(t_matrix_final));
     }
 }
 
